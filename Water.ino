@@ -1,11 +1,9 @@
-//www.elegoo.com
-//2016.12.08
 #include "SR04.h"
 
 #define TRIG_PIN 12
 #define ECHO_PIN 11
 #define WATERING_LED 4
-#define WATERING_RELAIS 7  
+#define WATERING_RELAIS 7
 
 SR04 sr04 = SR04(ECHO_PIN,TRIG_PIN);
 
@@ -80,7 +78,7 @@ void stop_flooding() {
     flooding = false;
     digitalWrite(WATERING_LED, LOW);    // turn the LED off by making the voltage LOW
     digitalWrite(WATERING_RELAIS, LOW);   // turn the RELEAIS off
-  } 
+  }
 }
 
 const long MIN_WATER_LEVEL = 20;
@@ -91,7 +89,7 @@ bool can_flood() {
 
 long measure_water_level() {
   long cwl = sr04.Distance();
-  Serial.print(cwl);    //The difference between "Serial.print" and "Serial.println" 
-  Serial.println("cm"); //is that "Serial.println" can change lines.                  
+  Serial.print(cwl);    //The difference between "Serial.print" and "Serial.println"
+  Serial.println("cm"); //is that "Serial.println" can change lines.
   return cwl;
 }
