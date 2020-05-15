@@ -1,16 +1,15 @@
-#include "SR04.h"
-
-#define TRIG_PIN 12
-#define ECHO_PIN 11
 #define WATERING_LED 4
 #define WATERING_RELAIS 7
 
-SR04 sr04 = SR04(ECHO_PIN,TRIG_PIN);
+#include "WaterSensorClass.h"
+WaterSensor *water_sensor;
 
 void setup() {
    Serial.begin(9600);//Initialization of Serial Port
    pinMode(WATERING_LED, OUTPUT);
    pinMode(WATERING_RELAIS, OUTPUT);
+
+   water_sensor = new WaterSensor();
    delay(1000);
 }
 
@@ -41,7 +40,7 @@ void check_water_time() {
 
 int current_flood_time = 0;
 void start_flooding() {
-  if (can_flood()) {
+  if (water_sensor->can_flood()) {
     Serial.println("Start flooding");
     flooding = true;
     current_flood_time = 0;
@@ -62,7 +61,7 @@ void check_flood_status(){
 }
 
 void perform_flooding() {
-  if (can_flood()) {
+  if (water_sensor->can_flood()) {
     int flooding_time_left = (FLOOD_LENGTH - current_flood_time) /1000;
     Serial.println(String("Flooding for ") + String(flooding_time_left) + String("s"));
     current_flood_time += CORE_LOOP;
@@ -79,17 +78,4 @@ void stop_flooding() {
     digitalWrite(WATERING_LED, LOW);    // turn the LED off by making the voltage LOW
     digitalWrite(WATERING_RELAIS, LOW);   // turn the RELEAIS off
   }
-}
-
-const long MIN_WATER_LEVEL = 20;
-bool can_flood() {
-  long current_water_level = measure_water_level();
-  return current_water_level >= MIN_WATER_LEVEL;
-}
-
-long measure_water_level() {
-  long cwl = sr04.Distance();
-  Serial.print(cwl);    //The difference between "Serial.print" and "Serial.println"
-  Serial.println("cm"); //is that "Serial.println" can change lines.
-  return cwl;
 }
