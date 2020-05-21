@@ -3,5 +3,6 @@ Water.ino.bin
 Water.ino.eep
 Water.ino.elf
 Water.ino.hex
+WaterWorkspace.code-workspace
 .vscode/arduino.json
 .vscode/c_cpp_properties.json
