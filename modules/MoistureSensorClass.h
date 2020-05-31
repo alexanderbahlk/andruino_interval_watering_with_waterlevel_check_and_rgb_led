@@ -1,8 +1,8 @@
 class MoistureSensor {
     private:
-        #define WATER_MOISTURE_SENSOR A5
-        const int dry = 827;
-        const int wet = 460;
+        #define WATER_MOISTURE_SENSOR A4
+        const int dry = 832;
+        const int wet = 456;
         const int idealMoisture = 50;
 
     public:

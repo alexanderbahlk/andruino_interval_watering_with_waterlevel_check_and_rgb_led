@@ -56,7 +56,7 @@ void startFlooding() {
     currentFloodTime = 0;
     digitalWrite(WATERING_RELAIS, HIGH);   // turn the RELEAIS on (HIGH is the voltage level)
   } else {
-    Serial.println("Waterlevel too low!");
+    Serial.println("Waterlevel too low or not dry enough!");
   }
 }
 
@@ -81,15 +81,15 @@ void performFlooding() {
 }
 
 void stopFlooding() {
-  if (flooding == true) {
-    Serial.println("Stop flooding");
-    flooding = false;
-    digitalWrite(WATERING_RELAIS, LOW);   // turn the RELEAIS off
-  }
+  Serial.println("Stop flooding");
+  flooding = false;
+  digitalWrite(WATERING_RELAIS, LOW);   // turn the RELEAIS off
 }
 
 void setWaterLevelLed() {
-  if (waterSensor->enoughWater()) {
+  if (waterSensor->tooMuchWater()) {
+    digitalWrite(WATER_LEVEL_LED, waterSensor->tooMuchWaterLedBlinkState()); 
+  } else if (waterSensor->enoughWater()) {
     digitalWrite(WATER_LEVEL_LED, LOW); 
   } else {
     digitalWrite(WATER_LEVEL_LED, HIGH); 
