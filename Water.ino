@@ -19,29 +19,26 @@ void setup() {
 const unsigned int CORE_LOOP = 1000;
 bool flooding = false;
 void loop() {
-  waterSensor->measure_water_level();
   setWaterLevelLed();
+  delay(CORE_LOOP); 
   if (flooding == true) {
     checkFloodStatus();
   } else {
     checkWaterTime();
   }
-  delay(CORE_LOOP); 
 }
 
 const long WATER_LOOP = 10000; //check every half hour
-
 //const long WATER_LOOP = 1800000; //check every half hour
+
 unsigned int currentWaterCheckTime = 0;
 
 void checkWaterTime() {
-  //Serial.println(WATER_LOOP);
-  //Serial.println(currentWaterCheckTime);
   unsigned int waterCheckTimeLeft = (WATER_LOOP - currentWaterCheckTime) /1000;
   Serial.println(String("Next watering in ") + String(waterCheckTimeLeft) + String("s"));
   if (currentWaterCheckTime >= WATER_LOOP) { //Start flooding every WATER_LOOP
-    startFlooding();
     currentWaterCheckTime = 0;
+    startFlooding();
   } else {
     currentWaterCheckTime += CORE_LOOP;
   }
@@ -50,7 +47,8 @@ void checkWaterTime() {
 unsigned int currentFloodTime = 0;
 void startFlooding() {
   bool soilTooDry = moistureSensor->soilTooDry();
-  if (soilTooDry && waterSensor->enoughWater()) {
+  bool enoughWater = waterSensor->enoughWater();
+  if (soilTooDry && enoughWater) {
     Serial.println("Start flooding");
     flooding = true;
     currentFloodTime = 0;
@@ -65,15 +63,16 @@ void checkFloodStatus(){
   if (currentFloodTime >= FLOOD_LENGTH) { //stop flooding after FLOOD_LENGTH
     stopFlooding();
   } else {
+    currentFloodTime += CORE_LOOP;
     performFlooding();
   }
 }
 
 void performFlooding() {
-  if (waterSensor->enoughWater()) {
+  bool enoughWater = waterSensor->enoughWater();
+  if (enoughWater) {
     unsigned int floodingTimeLeft = (FLOOD_LENGTH - currentFloodTime) /1000;
     Serial.println(String("Flooding for ") + String(floodingTimeLeft) + String("s"));
-    currentFloodTime += CORE_LOOP;
   } else {
     Serial.println("Waterlevel too low!");
     stopFlooding();
@@ -87,6 +86,7 @@ void stopFlooding() {
 }
 
 void setWaterLevelLed() {
+  waterSensor->measure_water_level();
   if (waterSensor->tooMuchWater()) {
     digitalWrite(WATER_LEVEL_LED, waterSensor->tooMuchWaterLedBlinkState()); 
   } else if (waterSensor->enoughWater()) {

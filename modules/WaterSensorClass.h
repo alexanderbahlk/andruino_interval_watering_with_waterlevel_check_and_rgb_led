@@ -26,7 +26,6 @@ class WaterSensor {
 
         int tooMuchWaterLedBlinkState() {
             _tooMuchWaterLedBlinkState = !_tooMuchWaterLedBlinkState;
-            Serial.println(_tooMuchWaterLedBlinkState);
             return _tooMuchWaterLedBlinkState == true ? HIGH : LOW;
         }
 
