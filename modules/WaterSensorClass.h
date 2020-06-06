@@ -3,11 +3,11 @@
 class WaterSensor {
     
     private:
-        const long TRIG_PIN = 12;
-        const long ECHO_PIN = 11;
+        const unsigned int TRIG_PIN = 12;
+        const unsigned int ECHO_PIN = 11;
         SR04 *sr04;
-        const long BOTTOM_WATER_LEVEL = 16;
-        const long TOP_WATER_LEVEL = 5;
+        const unsigned int BOTTOM_WATER_LEVEL = 16;
+        const unsigned int TOP_WATER_LEVEL = 5;
 
         long waterLevel = 0;
         bool _tooMuchWaterLedBlinkState = false;
@@ -31,8 +31,8 @@ class WaterSensor {
 
         void measure_water_level() {
             waterLevel = sr04->Distance();
-            Serial.print("Waterlevel: ");
+            Serial.print(F("Waterlevel: "));
             Serial.print(waterLevel);    //The difference between "Serial.print" and "Serial.println"
-            Serial.println("cm"); //is that "Serial.println" can change lines.
+            Serial.println(F("cm")); //is that "Serial.println" can change lines.
         }
 };

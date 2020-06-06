@@ -1,5 +1,6 @@
 #include "modules/WaterSensorClass.h"
 #include "modules/MoistureSensorClass.h"
+#include "Arduino.h"
 
 #define WATERING_RELAIS 2
 #define WATER_LEVEL_LED 4
@@ -34,8 +35,9 @@ const long WATER_LOOP = 10000; //check every half hour
 unsigned int currentWaterCheckTime = 0;
 
 void checkWaterTime() {
-  unsigned int waterCheckTimeLeft = (WATER_LOOP - currentWaterCheckTime) /1000;
-  Serial.println(String("Next watering in ") + String(waterCheckTimeLeft) + String("s"));
+  Serial.print(String(F("Next watering in ")));
+  Serial.print((WATER_LOOP - currentWaterCheckTime) /1000);
+  Serial.println(String(F("s")));
   if (currentWaterCheckTime >= WATER_LOOP) { //Start flooding every WATER_LOOP
     currentWaterCheckTime = 0;
     startFlooding();
@@ -49,12 +51,12 @@ void startFlooding() {
   bool soilTooDry = moistureSensor->soilTooDry();
   bool enoughWater = waterSensor->enoughWater();
   if (soilTooDry && enoughWater) {
-    Serial.println("Start flooding");
+    Serial.println(F("Start flooding"));
     flooding = true;
     currentFloodTime = 0;
     digitalWrite(WATERING_RELAIS, HIGH);   // turn the RELEAIS on (HIGH is the voltage level)
   } else {
-    Serial.println("Waterlevel too low or not dry enough!");
+    Serial.println(F("Waterlevel too low or not dry enough!"));
   }
 }
 
@@ -71,16 +73,17 @@ void checkFloodStatus(){
 void performFlooding() {
   bool enoughWater = waterSensor->enoughWater();
   if (enoughWater) {
-    unsigned int floodingTimeLeft = (FLOOD_LENGTH - currentFloodTime) /1000;
-    Serial.println(String("Flooding for ") + String(floodingTimeLeft) + String("s"));
+    Serial.print(String(F("Flooding for ")));
+    Serial.print((FLOOD_LENGTH - currentFloodTime) /1000);
+    Serial.println(String(F("s")));
   } else {
-    Serial.println("Waterlevel too low!");
+    Serial.println(F("Waterlevel too low!"));
     stopFlooding();
   }
 }
 
 void stopFlooding() {
-  Serial.println("Stop flooding");
+  Serial.println(F("Stop flooding"));
   flooding = false;
   digitalWrite(WATERING_RELAIS, LOW);   // turn the RELEAIS off
 }
