@@ -1,36 +1,43 @@
 #include "SR04.h"
 #include "Arduino.h"
 class WaterSensor {
+    #define TRIG_PIN 8
+    #define ECHO_PIN 7
     
     private:
-        const unsigned int TRIG_PIN = 12;
-        const unsigned int ECHO_PIN = 11;
         SR04 *sr04;
-        const unsigned int BOTTOM_WATER_LEVEL = 16;
-        const unsigned int TOP_WATER_LEVEL = 5;
+        const unsigned int WARN_WATER_LEVEL = 14;
+        const unsigned int MIN_WATER_LEVEL = 16;
+        const unsigned int MAX_WATER_LEVEL = 5;
 
         long waterLevel = 0;
-        bool _tooMuchWaterLedBlinkState = false;
 
     public:
         WaterSensor() {
+            pinMode(TRIG_PIN, OUTPUT);
+            pinMode(ECHO_PIN, INPUT);
             sr04 = new SR04(ECHO_PIN,TRIG_PIN);
         }
+
+        bool enoughWaterToFlood() {
+            return enoughWater();
+        }
+
         bool enoughWater() {
-            return waterLevel <= BOTTOM_WATER_LEVEL;
+            return waterLevel <= MIN_WATER_LEVEL; //16 cm and higer
+        }
+
+        bool soonNotEnoughWater() {
+            return waterLevel >= WARN_WATER_LEVEL; //14 cm and lower
         }
 
         bool tooMuchWater() {
-            return waterLevel < TOP_WATER_LEVEL;
-        }
-
-        int tooMuchWaterLedBlinkState() {
-            _tooMuchWaterLedBlinkState = !_tooMuchWaterLedBlinkState;
-            return _tooMuchWaterLedBlinkState == true ? HIGH : LOW;
+            return waterLevel < MAX_WATER_LEVEL;
         }
 
         void measure_water_level() {
             waterLevel = sr04->Distance();
+            //waterLevel = 17;
             Serial.print(F("Waterlevel: "));
             Serial.print(waterLevel);    //The difference between "Serial.print" and "Serial.println"
             Serial.println(F("cm")); //is that "Serial.println" can change lines.

@@ -1,84 +1,85 @@
 #include "modules/WaterSensorClass.h"
-#include "modules/MoistureSensorClass.h"
+#include "modules/WaterLedClass.h"
 #include "Arduino.h"
 
 #define WATERING_RELAIS 2
-#define WATER_LEVEL_LED 4
 
 WaterSensor *waterSensor;
-MoistureSensor *moistureSensor;
+WaterLed *waterLed;
+bool flooding;
+bool flooding_aborted;
+
+unsigned long WATER_INTERVAL = 10000; //kinda 2.5h
+//unsigned long WATER_INTERVAL = 90; //test every 90 sec
+
+unsigned int currentWaterCheckTime;
+unsigned int currentFloodTime;
+const unsigned int MILLI_2_SEC = 1000;
 
 void setup() {
   Serial.begin(9600);//Initialization of Serial Port
   pinMode(WATERING_RELAIS, OUTPUT);
-  pinMode(WATER_LEVEL_LED, OUTPUT);
+  waterLed = new WaterLed();
   waterSensor = new WaterSensor();
-  moistureSensor = new MoistureSensor();
+  flooding = false;
+  flooding_aborted = false;
+  currentWaterCheckTime = WATER_INTERVAL - 10; //start the first flooding 10 sec after the start
+  currentFloodTime = 0;
   delay(1000);
 }
 
 const unsigned int CORE_LOOP = 1000;
-bool flooding = false;
 void loop() {
+  waterSensor->measure_water_level();
   setWaterLevelLed();
-  delay(CORE_LOOP); 
-  if (flooding == true) {
+  delay(CORE_LOOP);
+  checkWaterTime();
+  if (flooding) {
     checkFloodStatus();
-  } else {
-    checkWaterTime();
   }
 }
-
-const long WATER_LOOP = 10000; //check every half hour
-//const long WATER_LOOP = 1800000; //check every half hour
-
-unsigned int currentWaterCheckTime = 0;
 
 void checkWaterTime() {
+  currentWaterCheckTime += CORE_LOOP / MILLI_2_SEC;
   Serial.print(String(F("Next watering in ")));
-  Serial.print((WATER_LOOP - currentWaterCheckTime) /1000);
+  Serial.print(WATER_INTERVAL - currentWaterCheckTime);
   Serial.println(String(F("s")));
-  if (currentWaterCheckTime >= WATER_LOOP) { //Start flooding every WATER_LOOP
+  Serial.println(currentWaterCheckTime);
+  if (currentWaterCheckTime >= WATER_INTERVAL) { //Start flooding every x hours
     currentWaterCheckTime = 0;
     startFlooding();
-  } else {
-    currentWaterCheckTime += CORE_LOOP;
-  }
+  } else if (flooding_aborted) {
+    if (!waterSensor->soonNotEnoughWater()) { //need some minimum water to start
+      startFlooding();
+    }
+  } 
 }
 
-unsigned int currentFloodTime = 0;
 void startFlooding() {
-  bool soilTooDry = moistureSensor->soilTooDry();
-  bool enoughWater = waterSensor->enoughWater();
-  if (soilTooDry && enoughWater) {
+  if (flooding == true) { return; }
+  bool enoughWaterToFlood = waterSensor->enoughWaterToFlood();
+  if (enoughWaterToFlood) {
     Serial.println(F("Start flooding"));
     flooding = true;
+    flooding_aborted = false;
     currentFloodTime = 0;
     digitalWrite(WATERING_RELAIS, HIGH);   // turn the RELEAIS on (HIGH is the voltage level)
   } else {
-    Serial.println(F("Waterlevel too low or not dry enough!"));
+    flooding_aborted = true;
+    Serial.println(F("Waterlevel too low. Abort start flooding"));
   }
 }
 
-const unsigned int FLOOD_LENGTH = 5000; //5 seconds of flooding
+const unsigned int FLOOD_LENGTH = 30; //30 seconds of flooding
 void checkFloodStatus(){
-  if (currentFloodTime >= FLOOD_LENGTH) { //stop flooding after FLOOD_LENGTH
+  bool enoughWaterToFlood = waterSensor->enoughWaterToFlood();
+  currentFloodTime += CORE_LOOP / MILLI_2_SEC;
+  if (!enoughWaterToFlood || currentFloodTime >= FLOOD_LENGTH) { //stop flooding after FLOOD_LENGTH
     stopFlooding();
   } else {
-    currentFloodTime += CORE_LOOP;
-    performFlooding();
-  }
-}
-
-void performFlooding() {
-  bool enoughWater = waterSensor->enoughWater();
-  if (enoughWater) {
     Serial.print(String(F("Flooding for ")));
-    Serial.print((FLOOD_LENGTH - currentFloodTime) /1000);
+    Serial.print(FLOOD_LENGTH - currentFloodTime);
     Serial.println(String(F("s")));
-  } else {
-    Serial.println(F("Waterlevel too low!"));
-    stopFlooding();
   }
 }
 
@@ -89,12 +90,19 @@ void stopFlooding() {
 }
 
 void setWaterLevelLed() {
-  waterSensor->measure_water_level();
-  if (waterSensor->tooMuchWater()) {
-    digitalWrite(WATER_LEVEL_LED, waterSensor->tooMuchWaterLedBlinkState()); 
-  } else if (waterSensor->enoughWater()) {
-    digitalWrite(WATER_LEVEL_LED, LOW); 
+  if (flooding) {
+    waterLed->floodingWaterBlink();
   } else {
-    digitalWrite(WATER_LEVEL_LED, HIGH); 
-  }
+      if (waterSensor->tooMuchWater()) {
+      waterLed->tooMuchWaterBlink();
+    } else if (waterSensor->enoughWater()){
+      if (waterSensor->soonNotEnoughWater()) {
+        waterLed->soonTooLowWaterBlink();
+      } else {
+        waterLed->rightAmountOfWaterBlink();
+      }
+    } else {
+      waterLed->tooLowWaterBlink();
+    }
+  } 
 }
